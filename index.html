@@ -1,84 +1,158 @@
-// تبديل التبويبات
-document.querySelectorAll('.tab-link').forEach(link => {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
-        this.classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active-tab'));
-        document.getElementById(this.getAttribute('data-tab')).classList.add('active-tab');
-    });
-});
-
-// تحميل المدخلات عند بدء الصفحة
-window.onload = function() {
-    loadEntries();
-    loadProfile();
-};
-
-// حفظ اليوميات
-document.getElementById('diary-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const entry = {
-        date: document.getElementById('entry-date').value,
-        time: document.getElementById('entry-time').value,
-        title: document.getElementById('entry-title').value,
-        content: document.getElementById('entry-content').value,
-        goals: document.getElementById('entry-goals').value
-    };
-    let entries = JSON.parse(localStorage.getItem('diaryEntries')) || [];
-    entries.push(entry);
-    localStorage.setItem('diaryEntries', JSON.stringify(entries));
-    addNewEntry(entry);
-    alert('تم حفظ اليوميات!');
-    this.reset();
-});
-
-// حفظ الملف الشخصي
-document.getElementById('profile-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const profile = {
-        name: document.getElementById('user-name').value,
-        bio: document.getElementById('user-bio').value,
-        goals: document.getElementById('user-goals').value
-    };
-    localStorage.setItem('userProfile', JSON.stringify(profile));
-    alert('تم تحديث الملف الشخصي!');
-});
-
-// تحميل المدخلات
-function loadEntries() {
-    const entries = JSON.parse(localStorage.getItem('diaryEntries')) || [];
-    entries.forEach(entry => addNewEntry(entry));
-}
-
-// تحميل الملف الشخصي
-function loadProfile() {
-    const profile = JSON.parse(localStorage.getItem('userProfile'));
-    if (profile) {
-        document.getElementById('user-name').value = profile.name || '';
-        document.getElementById('user-bio').value = profile.bio || '';
-        document.getElementById('user-goals').value = profile.goals || '';
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>مذكرتي الفخمة</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #f8f9fa, #e9ecef);
+      margin: 0;
+      padding: 30px;
+      color: #212529;
     }
-}
 
-// إضافة مدخل جديد
-function addNewEntry(entry) {
-    const entriesList = document.getElementById('entries-list');
-    const dateObj = new Date(entry.date);
-    const formattedDate = dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-    const timeParts = entry.time.split(':');
-    const formattedTime = `${timeParts[0]}:${timeParts[1]} ${timeParts[0] >= 12 ? 'مساءً' : 'صباحاً'}`;
-    const entryDiv = document.createElement('div');
-    entryDiv.className = 'entry';
-    entryDiv.innerHTML = `
-        <div class="entry-header">
-            <span class="entry-title">${entry.title}</span>
-            <span class="entry-date">${formattedDate} - ${formattedTime}</span>
-        </div>
-        <div class="entry-content">
-            <p>${entry.content}</p>
-        </div>
-        ${entry.goals ? `<div class="entry-goals"><p><strong>أهداف اليوم:</strong> ${entry.goals}</p></div>` : ''}
-    `;
-    entriesList.prepend(entryDiv);
-}
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #343a40;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin: 15px 0 5px;
+    }
+
+    textarea, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ced4da;
+      resize: vertical;
+      font-size: 15px;
+    }
+
+    button {
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .history {
+      margin-top: 40px;
+      background: #f1f3f5;
+      padding: 20px;
+      border-radius: 15px;
+    }
+
+    .entry {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .entry:last-child {
+      border-bottom: none;
+    }
+
+    .entry time {
+      display: block;
+      font-size: 14px;
+      color: #6c757d;
+      margin-bottom: 5px;
+    }
+
+    .entry .goals {
+      color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📖 مذكرتي اليومية</h1>
+
+    <label for="whatHappened">ماذا حدث اليوم؟</label>
+    <textarea id="whatHappened" rows="4" placeholder="اكتب ما حدث اليوم..."></textarea>
+
+    <label for="goals">أهداف اليوم</label>
+    <textarea id="goals" rows="3" placeholder="ما هي أهدافك؟"></textarea>
+
+    <button onclick="saveEntry()">💾 احفظ الملاحظة</button>
+
+    <div class="history" id="history">
+      <h2>📚 المحفوظات</h2>
+      <div id="entries"></div>
+    </div>
+  </div>
+
+  <script>
+    function getCurrentDateTime() {
+      const now = new Date();
+      const date = now.toLocaleDateString('ar-EG');
+      const time = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+      return { date, time };
+    }
+
+    function saveEntry() {
+      const whatHappened = document.getElementById("whatHappened").value.trim();
+      const goals = document.getElementById("goals").value.trim();
+      if (!whatHappened && !goals) return alert("اكتب شيئًا لحفظه!");
+
+      const { date, time } = getCurrentDateTime();
+      const entry = {
+        date,
+        time,
+        whatHappened,
+        goals
+      };
+
+      let entries = JSON.parse(localStorage.getItem("diaryEntries") || "[]");
+      entries.unshift(entry);
+      localStorage.setItem("diaryEntries", JSON.stringify(entries));
+
+      document.getElementById("whatHappened").value = "";
+      document.getElementById("goals").value = "";
+
+      loadEntries();
+    }
+
+    function loadEntries() {
+      const entries = JSON.parse(localStorage.getItem("diaryEntries") || "[]");
+      const entriesDiv = document.getElementById("entries");
+      entriesDiv.innerHTML = "";
+
+      entries.forEach(entry => {
+        const div = document.createElement("div");
+        div.className = "entry";
+        div.innerHTML = `
+          <time>🗓️ ${entry.date} 🕒 ${entry.time}</time>
+          <div><strong>📌 ماذا حدث:</strong> ${entry.whatHappened || "(فارغ)"}</div>
+          <div class="goals"><strong>🎯 أهداف:</strong> ${entry.goals || "(لا أهداف)"}</div>
+        `;
+        entriesDiv.appendChild(div);
+      });
+    }
+
+    window.onload = loadEntries;
+  </script>
+</body>
+</html>
